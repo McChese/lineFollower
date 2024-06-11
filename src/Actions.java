@@ -255,13 +255,6 @@ public class Actions {
         followLine = true;
 
         while (followLine) {
-            if(getDistance() < 0.02) {
-                turnAround();
-                System.out.println("Object detected");
-            } else if(getDistance() < 0.10) {
-                System.out.println("Object in " + getDistance() + "cm");
-            }
-
             if (Actions.getLEFTColorID() == Color.BLACK && Actions.getRIGHTColorID() == Color.BLACK) {
                 Actions.forward(Actions.getForwardSpeed());
             } else if (Actions.getLEFTColorID() == Color.BLACK && Actions.getRIGHTColorID() != Color.BLACK) {
@@ -279,6 +272,12 @@ public class Actions {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            }
+            if(getDistance() < 2) {
+                turnAround();
+                System.out.println("Object detected");
+            } else if(getDistance() < 10) {
+                System.out.println("Object in " + getDistance() + "cm");
             }
         }
     }
