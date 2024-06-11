@@ -204,7 +204,7 @@ public class Actions {
                 stop();
                 return;
             }
-            turnLeft(40);
+            turnLeft();
             Thread.sleep(20);
             if (getLEFTColorID() == lineColor || getRIGHTColorID() == lineColor) {
                 stop();
@@ -225,6 +225,7 @@ public class Actions {
 
             if (getLEFTColorID() != lineColor && getRIGHTColorID() == lineColor)
             {
+                turnRight(turnRightSpeedFast);
                 return;
             }
 
