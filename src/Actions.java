@@ -1,3 +1,4 @@
+import jdk.net.SocketFlow;
 import lejos.hardware.motor.Motor;
 import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3ColorSensor;
@@ -6,6 +7,24 @@ import lejos.robotics.Color;
 import lejos.robotics.SampleProvider;
 
 public class Actions {
+
+
+    public static boolean followLine = true;
+    private static int wiggleAttempts = 0;
+
+    private static boolean predictLeft;
+    private static boolean predictRight;
+
+    private static int lineColor = Color.BLACK;
+
+    private static int forwardSpeed = 400;
+    private static int backwardSpeed = 200;
+
+    private static int turnRightSpeedSlow = 50;
+    private static int turnLeftSpeedSlow = 50;
+
+    private static int turnRightSpeedFast = 150;
+    private static int turnLeftSpeedFast = 150;
 
     private static EV3ColorSensor leftColorSensor;
     private static EV3ColorSensor rightColorSensor;
@@ -93,85 +112,113 @@ public class Actions {
     }
 
     public static void findLineWithGyro() throws InterruptedException {
-        float startingHeading = getHeading();
-        float targetLeftHeading = startingHeading - 100;
-        float targetRightHeading = startingHeading + 100;
-
-        while (getHeading() > targetLeftHeading) {
-            float currentHeading = getHeading();
-            float difference = Math.abs(currentHeading - targetLeftHeading);
-            if (difference > 10) {
-                turnLeft(150);   // Faster turn
-            } else {
-                turnLeft(30);    // Slower turn
-            }
-            if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
-                stop();
+        resetGyro();
+        float startposHeading = getHeading();
+        float targetLeftHeading = startposHeading + 100;
+        float targetRightHeading = startposHeading - 100;
+        if(predictLeft) {
+            if(searchLineLeft(targetLeftHeading, startposHeading)) {
                 return;
             }
-            Thread.sleep(50);
-        }
-
-        // Return to the starting position
-        while (getHeading() < startingHeading) {
-            turnRight(50);
-            Thread.sleep(50);
-        }
-
-        while (getHeading() < targetRightHeading) {
-            float currentHeading = getHeading();
-            float difference = Math.abs(currentHeading - targetRightHeading);
-            if (difference > 10) {
-                turnRight(150);   // Faster turn
-            } else {
-                turnRight(30);    // Slower turn
-            }
-            if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
-                stop();
+            if(searchLineRight(targetRightHeading, startposHeading)) {
                 return;
             }
-            Thread.sleep(50);
-        }
-
-        // Return to the starting position
-        while (getHeading() > startingHeading) {
-            turnLeft(50);
-            Thread.sleep(50);
+        } else if(predictRight) {
+            if(searchLineRight(targetRightHeading, startposHeading)) {
+                return;
+            }
+            if(searchLineLeft(targetLeftHeading, startposHeading)) {
+                return;
+            }
+        } else {
+            if(searchLineLeft(targetLeftHeading, startposHeading)) {
+                return;
+            }
+            if(searchLineRight(targetRightHeading, startposHeading)) {
+                return;
+            }
         }
 
         stop();
         System.out.println("Line not found");
     }
+    public static boolean searchLineLeft(float targetLeftHeading, float startposHeading) throws InterruptedException {
+        while (getHeading() < targetLeftHeading) {
+            turnLeft(100);
+            if (getLEFTColorID() == lineColor || getRIGHTColorID() == lineColor) {
+                stop();
+                System.out.println("Line found on the left");
+                predictLeft = true;
+                predictRight = false;
+                return true;
+            }
+            Thread.sleep(50);
+
+            while (getHeading() > startposHeading) {
+                if (Math.abs(getHeading() - startposHeading) < 5)
+                    turnRight(turnRightSpeedSlow);
+                else
+                    turnRight(turnRightSpeedFast);
+                Thread.sleep(50);
+            }
+        }
+        return false;
+    }
+
+    public static boolean searchLineRight(float targetRightHeading, float startposHeading) throws InterruptedException {
+        while (getHeading() > targetRightHeading) {
+            turnRight(turnRightSpeedFast);
+            if (getLEFTColorID() == lineColor || getRIGHTColorID() == lineColor) {
+                stop();
+                System.out.println("Line found on the right");
+                predictRight = true;
+                predictLeft = false;
+                return true;
+            }
+            Thread.sleep(50);
+
+            while (getHeading() < startposHeading) {
+                if (Math.abs(getHeading() - startposHeading) < 5)
+                    turnLeft(turnLeftSpeedSlow);
+                else
+                    turnLeft(turnLeftSpeedFast);
+                Thread.sleep(50);
+            }
+        }
+        return false;
+    }
 
 
-    public static void wiggle() throws InterruptedException {
+
+    public static void wiggle() throws InterruptedException
+    {
         for (int i = 0; i < 5; i++) {
-            forward(250);  // Move forward
-            Thread.sleep(100);
-            if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
+            forward(forwardSpeed);
+            Thread.sleep(70);
+            if (getLEFTColorID() == lineColor || getRIGHTColorID() == lineColor) {
                 stop();
                 return;
             }
-            turnLeft(50);  // Turn left
-            Thread.sleep(10);
-            if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
+            turnLeft(40);
+            Thread.sleep(20);
+            if (getLEFTColorID() == lineColor || getRIGHTColorID() == lineColor) {
                 stop();
                 return;
             }
-            Thread.sleep(100);
-            if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
+            Thread.sleep(50);
+            if (getLEFTColorID() == lineColor || getRIGHTColorID() == lineColor) {
                 stop();
                 return;
             }
-            turnRight(50);  // Turn right
-            Thread.sleep(100);
-            if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
-                forward(250);
+            turnRight(40);
+            Thread.sleep(60);
+            if (getLEFTColorID() == lineColor || getRIGHTColorID() == lineColor) {
+                forward(forwardSpeed);
                 stop();
                 return;
             }
 
-            if (getLEFTColorID() != Color.BLACK && getRIGHTColorID() == Color.BLACK)
+            if (getLEFTColorID() != lineColor && getRIGHTColorID() == lineColor)
             {
                 return;
             }
@@ -180,12 +227,102 @@ public class Actions {
         stop();
     }
 
-
-    private static float normalizeHeading(float heading) {
-        heading = heading % 360;
-        if (heading < 0) {
-            heading += 360;
+    public static void turnAround()
+    {
+        backwards(backwardSpeed);
+        float heading = getHeading();
+        float targetHeading = heading + 180;
+        while (getHeading() < targetHeading)
+        {
+            if (Math.abs(getHeading() - targetHeading) < 5)
+            {
+                turnLeft(turnLeftSpeedSlow);
+            }
+            else
+            {
+                turnLeft(turnLeftSpeedFast);
+            }
         }
-        return heading;
+    }
+
+    public static void followLine()
+    {
+        followLine = true;
+
+        while (followLine) {
+            if (Actions.getLEFTColorID() == Color.BLACK && Actions.getRIGHTColorID() == Color.BLACK) {
+                Actions.forward(Actions.getForwardSpeed());
+            } else if (Actions.getLEFTColorID() == Color.BLACK && Actions.getRIGHTColorID() != Color.BLACK) {
+                Actions.turnLeft(Actions.getTurnLeftSpeedFast());
+            } else if (Actions.getLEFTColorID() != Color.BLACK && Actions.getRIGHTColorID() == Color.BLACK) {
+                Actions.turnRight(Actions.getTurnRightSpeedFast());
+            } else {
+                try {
+                    wiggleAttempts++;
+                    Actions.wiggle();
+                    if (wiggleAttempts >= 2) {
+                        Actions.findLineWithGyro();
+                        wiggleAttempts = 0;
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public static void stopFollowLine()
+    {
+        followLine = false;
+    }
+
+
+
+    public static int getTurnRightSpeedSlow() {
+        return turnRightSpeedSlow;
+    }
+
+    public static void setTurnRightSpeedSlow(int speed) {
+        turnRightSpeedSlow = speed;
+    }
+
+    public static int getTurnLeftSpeedSlow() {
+        return turnLeftSpeedSlow;
+    }
+
+    public static void setTurnLeftSpeedSlow(int speed) {
+        turnLeftSpeedSlow = speed;
+    }
+
+    public static int getTurnRightSpeedFast() {
+        return turnRightSpeedFast;
+    }
+
+    public static void setTurnRightSpeedFast(int speed) {
+        turnRightSpeedFast = speed;
+    }
+
+    public static int getTurnLeftSpeedFast() {
+        return turnLeftSpeedFast;
+    }
+
+    public static void setTurnLeftSpeedFast(int speed) {
+        turnLeftSpeedFast = speed;
+    }
+
+    public static int getForwardSpeed() {
+        return forwardSpeed;
+    }
+
+    public static void setForwardSpeed(int speed) {
+        forwardSpeed = speed;
+    }
+
+    public static int getBackwardSpeed() {
+        return backwardSpeed;
+    }
+
+    public static void setBackwardSpeed(int backwardSpeed) {
+        Actions.backwardSpeed = backwardSpeed;
     }
 }
