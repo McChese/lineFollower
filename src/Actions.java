@@ -2,7 +2,6 @@ import lejos.hardware.motor.Motor;
 import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3ColorSensor;
 import lejos.hardware.sensor.EV3GyroSensor;
-import lejos.hardware.sensor.EV3UltrasonicSensor;
 import lejos.robotics.Color;
 import lejos.robotics.SampleProvider;
 
@@ -32,8 +31,6 @@ public class Actions {
     private static SampleProvider RIGHTcolorProvider;
     private static EV3GyroSensor gyroSensor;
     private static SampleProvider gyroAngleProvider;
-    //private static EV3UltrasonicSensor ultrasonicSensor;
-    //private static SampleProvider ultrasonicProvider;
 
     static {
         try {
@@ -44,9 +41,6 @@ public class Actions {
 
             gyroSensor = new EV3GyroSensor(SensorPort.S4);
             gyroAngleProvider = gyroSensor.getAngleMode();
-
-            //ultrasonicSensor = new EV3UltrasonicSensor(SensorPort.S3);
-            //ultrasonicProvider = ultrasonicSensor.getDistanceMode();
         } catch (IllegalArgumentException e) {
             System.err.println("Failed to initialize color sensors: " + e.getMessage());
             System.exit(1);
@@ -282,11 +276,7 @@ public class Actions {
         followLine = false;
     }
 
-    /*public static float getDistance() {
-        float[] sample = new float[ultrasonicProvider.sampleSize()];
-        ultrasonicProvider.fetchSample(sample, 0);
-        return sample[0];
-    }*/
+
 
     public static int getTurnRightSpeedSlow() {
         return turnRightSpeedSlow;
