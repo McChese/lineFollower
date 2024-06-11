@@ -4,6 +4,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.ServerSocket;
 import java.net.Socket;
 
 public class EV3Server {
@@ -19,6 +20,19 @@ public class EV3Server {
         System.out.println("Waiting for client");
         Thread discoveryThread = new Thread(new DiscoveryTask());
         discoveryThread.start();
+
+        try {
+            ServerSocket serverSocket = new ServerSocket(PORT);
+            while (true) {
+                clientSocket = serverSocket.accept();
+                System.out.println("Client connected: " + clientSocket.getInetAddress().getHostAddress());
+
+                handleClient(clientSocket);
+            }
+        } catch (IOException e) {
+            System.err.println("Server error: " + e.getMessage());
+        }
+
 
     }
 
