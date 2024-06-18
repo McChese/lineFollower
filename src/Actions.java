@@ -1,3 +1,4 @@
+import lejos.hardware.Sound;
 import lejos.hardware.motor.Motor;
 import lejos.hardware.port.SensorPort;
 import lejos.hardware.sensor.EV3ColorSensor;
@@ -30,6 +31,7 @@ public class Actions {
     }
 
     public static void forward(int speed) {
+        System.out.println("Moving forward at speed: " + speed);
         Motor.B.setSpeed(speed);
         Motor.C.setSpeed(speed);
         Motor.B.forward();
@@ -37,6 +39,7 @@ public class Actions {
     }
 
     public static void backwards(int speed) {
+        System.out.println("Moving backward at speed: " + speed);
         Motor.B.setSpeed(speed);
         Motor.C.setSpeed(speed);
         Motor.B.backward();
@@ -44,6 +47,7 @@ public class Actions {
     }
 
     public static void turnRight(int speed) {
+        System.out.println("Turning right at speed: " + speed);
         Motor.B.setSpeed(speed);
         Motor.C.setSpeed(speed);
         Motor.B.forward();
@@ -51,6 +55,7 @@ public class Actions {
     }
 
     public static void turnLeft(int speed) {
+        System.out.println("Turning left at speed: " + speed);
         Motor.B.setSpeed(speed);
         Motor.C.setSpeed(speed);
         Motor.B.backward();
@@ -58,6 +63,7 @@ public class Actions {
     }
 
     public static void stop() {
+        System.out.println("Stopping motors");
         Motor.B.stop(true);
         Motor.C.stop(true);
     }
@@ -65,16 +71,19 @@ public class Actions {
     public static int getLEFTColorID() {
         float[] sample = new float[LEFTcolorProvider.sampleSize()];
         LEFTcolorProvider.fetchSample(sample, 0);
+        System.out.println("Left Color ID: " + (int) sample[0]);
         return (int) sample[0];
     }
 
     public static int getRIGHTColorID() {
         float[] sample = new float[RIGHTcolorProvider.sampleSize()];
         RIGHTcolorProvider.fetchSample(sample, 0);
+        System.out.println("Right Color ID: " + (int) sample[0]);
         return (int) sample[0];
     }
 
     private static void wait(int milliseconds) {
+        System.out.println("Waiting for " + milliseconds + " milliseconds");
         try {
             Thread.sleep(milliseconds);
         } catch (InterruptedException e) {
@@ -85,20 +94,28 @@ public class Actions {
     public static float getHeading() {
         float[] sample = new float[gyroAngleProvider.sampleSize()];
         gyroAngleProvider.fetchSample(sample, 0);
+        System.out.println("Current heading: " + sample[0]);
         return sample[0];
     }
 
     public static void resetGyro() {
+        System.out.println("Resetting gyro sensor");
         gyroSensor.reset();
     }
 
     public static void findLineWithGyro() throws InterruptedException {
         float startingHeading = getHeading();
-        float targetLeftHeading = startingHeading - 100;
-        float targetRightHeading = startingHeading + 100;
+        float targetLeftHeading = startingHeading + 100;
+        float targetRightHeading = startingHeading - 100;
 
-        while (getHeading() > targetLeftHeading) {
+        System.out.println("Starting findLineWithGyro");
+        System.out.println("Starting heading: " + startingHeading);
+        System.out.println("Target left heading: " + targetLeftHeading);
+        System.out.println("Target right heading: " + targetRightHeading);
+
+        while (getHeading() < targetLeftHeading) {
             float currentHeading = getHeading();
+            System.out.println("\nCurrent heading: " + currentHeading);
             float difference = Math.abs(currentHeading - targetLeftHeading);
             if (difference > 12) {
                 turnLeft(150);
@@ -107,17 +124,18 @@ public class Actions {
             }
             if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
                 stop();
+                System.out.println("Line found!");
                 return;
             }
             wait(50);
         }
 
-        while (getHeading() < startingHeading) {
+        while (getHeading() > startingHeading) {
             turnRight(50);
             wait(50);
-        }
+        } //get back to the startheading
 
-        while (getHeading() < targetRightHeading) {
+        while (getHeading() > targetRightHeading) {
             float currentHeading = getHeading();
             float difference = Math.abs(currentHeading - targetRightHeading);
             if (difference > 12) {
@@ -127,45 +145,53 @@ public class Actions {
             }
             if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
                 stop();
+                System.out.println("Line found!");
                 return;
             }
             wait(50);
         }
 
-        while (getHeading() > startingHeading) {
-            turnLeft(40);
+        while (getHeading() < startingHeading) {
+            turnLeft(50);
             wait(50);
-        }
+        }//get back to the startheading
 
         stop();
-        System.out.println("Line not found");
+        System.out.println("findLineGyro was not successful");
     }
 
-
     public static void wiggle() throws InterruptedException {
-        for (int i = 0; i < 5; i++) {
-            forward(250);
-            wait(200);
+        System.out.println("Starting wiggle");
+        for (int i = 0; i < 4; i++) {
+            forward(200);
+            wait(100);
             if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
                 stop();
+                System.out.println("Line found during wiggle!");
                 return;
             }
-            turnLeft(70);
-            Thread.sleep(10);
+            turnLeft(60);
+            wait(10);
             if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
+                forward(200);
+                wait(100);
                 stop();
+                System.out.println("Line found during wiggle!");
                 return;
             }
-            Thread.sleep(100);
+            wait(100);
             if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
                 stop();
+                System.out.println("Line found during wiggle!");
                 return;
             }
-            turnRight(70);
-            Thread.sleep(100);
+            turnRight(60);
+            wait(100);
             if (getLEFTColorID() == Color.BLACK || getRIGHTColorID() == Color.BLACK) {
-                forward(250);
+                forward(200);
+                wait(100);
                 stop();
+                System.out.println("Line found during wiggle!");
                 return;
             }
 
@@ -175,5 +201,6 @@ public class Actions {
 
         }
         stop();
+        System.out.println("wiggle was not successful");
     }
 }
